@@ -3,6 +3,7 @@ import html
 from urllib.parse import quote
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 import price_compare as pc
 
@@ -106,11 +107,23 @@ def head_markdown(r):
 def render_item(r):
     url = r.get("url", "")
     if r["site"] == "ggsel" and url.startswith("http"):
-        # ggsel: ссылка через st.html с target="_top", переход в основной вкладке,
-        # а не внутри окна приложения на Streamlit Cloud
+        # ggsel: ссылка выводится через компонент с JavaScript, который переводит
+        # основную вкладку на страницу товара (window.top), а не внутри окна приложения
         st.markdown(head_markdown(r))
-        st.html(f'<a href="{html.escape(url, quote=True)}" target="_top">'
-                f'{html.escape(r["title"])}</a>')
+        components.html(
+            f"""
+            <a href="{html.escape(url, quote=True)}" target="_top"
+               style="font-family:sans-serif;font-size:15px;color:#4da3ff;">
+               {html.escape(r["title"])}</a>
+            <script>
+              document.querySelector("a").addEventListener("click", function (e) {{
+                e.preventDefault();
+                window.top.location.href = this.href;
+              }});
+            </script>
+            """,
+            height=60,
+        )
         st.markdown(stock_text(r))
     else:
         title = md_escape(r["title"])
