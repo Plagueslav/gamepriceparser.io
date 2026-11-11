@@ -28,7 +28,7 @@ SITES = [
 HOME_URLS = {
     "steam": "https://store.steampowered.com/",
     "steambuy": "https://steambuy.com/",
-    "ggsel": "https://tinyurl.com/y7j8bfkd",
+    "ggsel": "https://ggsel.net/",
     "gabestore": "https://gabestore.ru/",
     "steampay": "https://steampay.com/",
 }
