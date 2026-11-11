@@ -106,9 +106,11 @@ def head_markdown(r):
 def render_item(r):
     url = r.get("url", "")
     if r["site"] == "ggsel" and url.startswith("http"):
-        # ggsel: ссылка через st.html, чтобы Streamlit не добавлял target="_blank"
+        # ggsel: ссылка через st.html с target="_top", переход в основной вкладке,
+        # а не внутри окна приложения на Streamlit Cloud
         st.markdown(head_markdown(r))
-        st.html(f'<a href="{html.escape(url, quote=True)}">{html.escape(r["title"])}</a>')
+        st.html(f'<a href="{html.escape(url, quote=True)}" target="_top">'
+                f'{html.escape(r["title"])}</a>')
         st.markdown(stock_text(r))
     else:
         title = md_escape(r["title"])
@@ -123,6 +125,16 @@ def render_items(rows, key, by_sales):
         return
     for r in sort_rows(key, rows, by_sales):
         render_item(r)
+
+
+def store_header(key, name):
+    """Заголовок колонки: ссылка на поиск магазина (для ggsel через st.html, target="_top")."""
+    url = store_url(key, st.session_state.query)
+    if key == "ggsel":
+        st.html(f'<h3><a href="{html.escape(url, quote=True)}" target="_top">'
+                f'{html.escape(name)}</a></h3>')
+    else:
+        st.markdown(f"### [{name}]({url})")
 
 
 @st.fragment
@@ -150,7 +162,7 @@ if submitted and query.strip():
 cols = st.columns(len(SITES))
 for i, (key, name) in enumerate(SITES):
     with cols[i]:
-        st.markdown(f"### [{name}]({store_url(key, st.session_state.query)})")
+        store_header(key, name)
 
 by_sales = st.session_state.get("ggsel_by_sales", False)
 

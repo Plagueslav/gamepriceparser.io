@@ -170,7 +170,8 @@ def search_steam(query):
     for category_id, label in STEAM_CATEGORIES:
         r = requests.get(f"{STEAM}/search",
                          params={"term": query, "hwtype": 0, "supportedlang": "russian",
-                                 "category1": category_id, "ndl": 1},
+                                 "category1": category_id, "ndl": 1,
+                                 "cc": "ru", "l": "russian"},
                          headers=HEADERS, timeout=TIMEOUT)
         r.raise_for_status()
         for row in parse_steam_search(r.text):
@@ -361,5 +362,4 @@ if __name__ == "__main__":
     query = " ".join(sys.argv[1:]) or input("Название игры: ").strip()
     for r in search_all(query):
         price = f'{r["price"]:>7} RUB' if r["price"] is not None else "   нет цены"
-        status = r.get("status") or format_status(r["in_stock"])
-        print(f'{price}  {r["site"]:<9} {r["category"]:<13} {r["title"]}  [{status}]')
+        print(f'{price}  {r["site"]:<9} {r["category"]:<13} {r["title"]}  [{format_status(r["in_stock"])}]')
