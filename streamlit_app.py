@@ -7,6 +7,16 @@ import price_compare as pc
 
 st.set_page_config(page_title="Сравнение цен на игры", layout="wide")
 
+# скрываем значки ссылок у заголовков Streamlit (#steam и т.п.)
+st.markdown(
+    """
+    <style>
+    [data-testid="stHeaderActionElements"] { display: none; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 SITES = [
     ("steam", "Steam"),
     ("steambuy", "steambuy"),
