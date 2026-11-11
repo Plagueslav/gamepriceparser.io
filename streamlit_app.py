@@ -1,9 +1,7 @@
 import concurrent.futures as cf
-import html
 from urllib.parse import quote
 
 import streamlit as st
-import streamlit.components.v1 as components
 
 import price_compare as pc
 
@@ -106,29 +104,9 @@ def head_markdown(r):
 
 def render_item(r):
     url = r.get("url", "")
-    if r["site"] == "ggsel" and url.startswith("http"):
-        # ggsel: ссылка выводится через компонент с JavaScript, который переводит
-        # основную вкладку на страницу товара (window.top), а не внутри окна приложения
-        st.markdown(head_markdown(r))
-        components.html(
-            f"""
-            <a href="{html.escape(url, quote=True)}" target="_top"
-               style="font-family:sans-serif;font-size:15px;color:#4da3ff;">
-               {html.escape(r["title"])}</a>
-            <script>
-              document.querySelector("a").addEventListener("click", function (e) {{
-                e.preventDefault();
-                window.top.location.href = this.href;
-              }});
-            </script>
-            """,
-            height=60,
-        )
-        st.markdown(stock_text(r))
-    else:
-        title = md_escape(r["title"])
-        link = f"[{title}]({url})" if url.startswith("http") else title
-        st.markdown(f"{head_markdown(r)}  \n{link}  \n{stock_text(r)}")
+    title = md_escape(r["title"])
+    link = f"[{title}]({url})" if url.startswith("http") else title
+    st.markdown(f"{head_markdown(r)}  \n{link}  \n{stock_text(r)}")
     st.write("")   # небольшой отступ между товарами
 
 
@@ -138,16 +116,6 @@ def render_items(rows, key, by_sales):
         return
     for r in sort_rows(key, rows, by_sales):
         render_item(r)
-
-
-def store_header(key, name):
-    """Заголовок колонки: ссылка на поиск магазина (для ggsel через st.html, target="_top")."""
-    url = store_url(key, st.session_state.query)
-    if key == "ggsel":
-        st.html(f'<h3><a href="{html.escape(url, quote=True)}" target="_top">'
-                f'{html.escape(name)}</a></h3>')
-    else:
-        st.markdown(f"### [{name}]({url})")
 
 
 @st.fragment
@@ -175,7 +143,7 @@ if submitted and query.strip():
 cols = st.columns(len(SITES))
 for i, (key, name) in enumerate(SITES):
     with cols[i]:
-        store_header(key, name)
+        st.markdown(f"### [{name}]({store_url(key, st.session_state.query)})")
 
 by_sales = st.session_state.get("ggsel_by_sales", False)
 
