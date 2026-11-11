@@ -1,2 +1,6 @@
 steampay_sitemap.xml
 __pycache__/
+.devcontainer
+1.py
+gui.py
+steambuy.py
