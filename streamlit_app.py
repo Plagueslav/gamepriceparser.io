@@ -28,7 +28,7 @@ SITES = [
 HOME_URLS = {
     "steam": "https://store.steampowered.com/",
     "steambuy": "https://steambuy.com/",
-    "ggsel": "https://ggsel.net/en",
+    "ggsel": "https://ggsel.net/",
     "gabestore": "https://gabestore.ru/",
     "steampay": "https://steampay.com/",
 }
@@ -115,7 +115,12 @@ def head_markdown(r):
 def render_item(r):
     url = r.get("url", "")
     title = md_escape(r["title"])
-    link = f"[{title}]({url})" if url.startswith("http") else title
+    if r["site"] == "ggsel":
+        # у ggsel название без ссылки: переход на товар из приложения не работает,
+        # ссылка на поиск ggsel выводится вверху колонки
+        link = title
+    else:
+        link = f"[{title}]({url})" if url.startswith("http") else title
     st.markdown(f"{head_markdown(r)}  \n{link}  \n{stock_text(r)}")
     st.write("")   # небольшой отступ между товарами
 
@@ -131,6 +136,9 @@ def render_items(rows, key, by_sales):
 @st.fragment
 def ggsel_block():
     """Колонка ggsel отдельным фрагментом: галочка перерисовывает только её."""
+    query = st.session_state.query
+    if query:
+        st.markdown(f"[открыть поиск на ggsel]({store_url('ggsel', query)})")
     st.checkbox("сортировать по продажам", key="ggsel_by_sales")
     with st.container(height=COLUMN_HEIGHT):
         render_items(st.session_state.results.get("ggsel", []), "ggsel",
