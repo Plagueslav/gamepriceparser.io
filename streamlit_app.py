@@ -54,7 +54,7 @@ def store_url(key, query):
     }[key]
 
 
-def copy_button(text, label="копировать ссылку", height=36):
+def copy_button(text, height=36):
     """Кнопка копирования. Адрес на экран не выводится. Через 1,5 с статус возвращается."""
     components.html(
         f"""
@@ -66,10 +66,10 @@ def copy_button(text, label="копировать ссылку", height=36):
             color: #fafafa; font-size: 13px; font-family: sans-serif;
           }}
         </style>
-        <button id="copy-btn">📋 {label}</button>
+        <button id="copy-btn">📋 копировать ссылку</button>
         <script>
         const text = {json.dumps(text)};
-        const label = {json.dumps("📋 " + label)};
+        const label = "📋 копировать ссылку";
         const btn = document.getElementById("copy-btn");
         let timer = null;
         btn.addEventListener("click", function () {{
@@ -87,6 +87,49 @@ def copy_button(text, label="копировать ссылку", height=36):
         </script>
         """,
         height=height,
+    )
+
+
+def ggsel_header(name, url):
+    """Заголовок ggsel и кнопка копирования в одной строке, в одном блоке."""
+    components.html(
+        f"""
+        <style>
+          html, body {{ margin: 0; padding: 0; background: transparent;
+                        font-family: "Source Sans Pro", sans-serif; }}
+          .row {{ display: flex; align-items: center; gap: 14px; height: 44px; }}
+          .title {{ font-size: 28px; font-weight: 700; color: #4da3ff;
+                    text-decoration: underline; white-space: nowrap; }}
+          #copy-btn {{
+            cursor: pointer; white-space: nowrap; padding: 4px 10px;
+            border-radius: 6px; border: 1px solid #666; background: #262730;
+            color: #fafafa; font-size: 13px; font-family: sans-serif;
+          }}
+        </style>
+        <div class="row">
+          <a class="title" href="{url}" target="_blank">{name}</a>
+          <button id="copy-btn">📋 копировать</button>
+        </div>
+        <script>
+        const text = {json.dumps(url)};
+        const label = "📋 копировать";
+        const btn = document.getElementById("copy-btn");
+        let timer = null;
+        btn.addEventListener("click", function () {{
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            let ok = false;
+            try {{ ok = document.execCommand("copy"); }} catch (e) {{}}
+            document.body.removeChild(ta);
+            btn.textContent = ok ? "✅ скопировано" : "✖ не удалось";
+            clearTimeout(timer);
+            timer = setTimeout(function () {{ btn.textContent = label; }}, 1500);
+        }});
+        </script>
+        """,
+        height=52,
     )
 
 
@@ -197,13 +240,8 @@ cols = st.columns(len(SITES))
 for i, (key, name) in enumerate(SITES):
     with cols[i]:
         if key == "ggsel":
-            # заголовок ggsel и рядом компактная кнопка копирования адреса поиска
-            head_col, copy_col = st.columns([3, 2], vertical_alignment="center")
-            with head_col:
-                st.markdown(f"### [{name}]({store_url(key, st.session_state.query)})")
-            with copy_col:
-                copy_button(store_url(key, st.session_state.query),
-                            label="копировать", height=38)
+            # заголовок и кнопка копирования выводятся вместе, рядом друг с другом
+            ggsel_header(name, store_url(key, st.session_state.query))
         else:
             st.markdown(f"### [{name}]({store_url(key, st.session_state.query)})")
 
