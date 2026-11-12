@@ -1,5 +1,4 @@
 import concurrent.futures as cf
-import html
 import json
 from urllib.parse import quote
 
@@ -55,16 +54,24 @@ def store_url(key, query):
     }[key]
 
 
-def copy_button(text):
-    """Кнопка «копировать ссылку». Адрес не выводится на экран, только копируется."""
+def copy_button(text, label="копировать ссылку", height=36):
+    """Кнопка копирования. Адрес на экран не выводится. Через 1,5 с статус возвращается."""
     components.html(
         f"""
-        <button id="copy-btn" style="cursor:pointer;padding:5px 12px;border-radius:6px;
-            border:1px solid #666;background:#262730;color:#fafafa;font-size:13px;
-            font-family:sans-serif;">📋 копировать ссылку</button>
+        <style>
+          html, body {{ margin: 0; padding: 0; background: transparent; }}
+          #copy-btn {{
+            cursor: pointer; white-space: nowrap; padding: 4px 10px;
+            border-radius: 6px; border: 1px solid #666; background: #262730;
+            color: #fafafa; font-size: 13px; font-family: sans-serif;
+          }}
+        </style>
+        <button id="copy-btn">📋 {label}</button>
         <script>
         const text = {json.dumps(text)};
+        const label = {json.dumps("📋 " + label)};
         const btn = document.getElementById("copy-btn");
+        let timer = null;
         btn.addEventListener("click", function () {{
             const ta = document.createElement("textarea");
             ta.value = text;
@@ -74,10 +81,12 @@ def copy_button(text):
             try {{ ok = document.execCommand("copy"); }} catch (e) {{}}
             document.body.removeChild(ta);
             btn.textContent = ok ? "✅ скопировано" : "✖ не удалось";
+            clearTimeout(timer);
+            timer = setTimeout(function () {{ btn.textContent = label; }}, 1500);
         }});
         </script>
         """,
-        height=44,
+        height=height,
     )
 
 
@@ -188,12 +197,13 @@ cols = st.columns(len(SITES))
 for i, (key, name) in enumerate(SITES):
     with cols[i]:
         if key == "ggsel":
-            # заголовок ggsel и рядом кнопка копирования адреса поиска
-            head_col, copy_col = st.columns([3, 2])
+            # заголовок ggsel и рядом компактная кнопка копирования адреса поиска
+            head_col, copy_col = st.columns([3, 2], vertical_alignment="center")
             with head_col:
                 st.markdown(f"### [{name}]({store_url(key, st.session_state.query)})")
             with copy_col:
-                copy_button(store_url(key, st.session_state.query))
+                copy_button(store_url(key, st.session_state.query),
+                            label="копировать", height=38)
         else:
             st.markdown(f"### [{name}]({store_url(key, st.session_state.query)})")
 
