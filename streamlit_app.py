@@ -115,8 +115,13 @@ def head_markdown(r):
 def render_item(r):
     url = r.get("url", "")
     title = md_escape(r["title"])
-    link = f"[{title}]({url})" if url.startswith("http") else title
-    st.markdown(f"{head_markdown(r)}  \n{link}  \n{stock_text(r)}")
+    if r["site"] == "ggsel" and url.startswith("http"):
+        # ggsel: название без ссылки, адрес товара выводится блоком с кнопкой копирования
+        st.markdown(f"{head_markdown(r)}  \n{title}  \n{stock_text(r)}")
+        st.code(url, language=None)
+    else:
+        link = f"[{title}]({url})" if url.startswith("http") else title
+        st.markdown(f"{head_markdown(r)}  \n{link}  \n{stock_text(r)}")
     st.write("")   # небольшой отступ между товарами
 
 
