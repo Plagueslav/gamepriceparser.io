@@ -8,10 +8,20 @@ import price_compare as pc
 st.set_page_config(page_title="Сравнение цен на игры", layout="wide")
 
 # скрываем значки ссылок у заголовков Streamlit (#steam и т.п.)
+# и скрываем текст блоков кода в ggsel, оставляя только кнопку копирования
 st.markdown(
     """
     <style>
     [data-testid="stHeaderActionElements"] { display: none; }
+    .ggsel-copy pre {
+        height: 0 !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        overflow: hidden !important;
+    }
+    .ggsel-copy { margin-top: -6px; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -116,9 +126,11 @@ def render_item(r):
     url = r.get("url", "")
     title = md_escape(r["title"])
     if r["site"] == "ggsel" and url.startswith("http"):
-        # ggsel: название без ссылки, адрес товара выводится блоком с кнопкой копирования
+        # ggsel: название без ссылки; адрес товара только для копирования
         st.markdown(f"{head_markdown(r)}  \n{title}  \n{stock_text(r)}")
+        st.markdown('<div class="ggsel-copy">', unsafe_allow_html=True)
         st.code(url, language=None)
+        st.markdown("</div>", unsafe_allow_html=True)
     else:
         link = f"[{title}]({url})" if url.startswith("http") else title
         st.markdown(f"{head_markdown(r)}  \n{link}  \n{stock_text(r)}")
@@ -158,7 +170,17 @@ if submitted and query.strip():
 cols = st.columns(len(SITES))
 for i, (key, name) in enumerate(SITES):
     with cols[i]:
-        st.markdown(f"### [{name}]({store_url(key, st.session_state.query)})")
+        if key == "ggsel":
+            # заголовок ggsel и рядом кнопка копирования адреса поиска
+            head_col, copy_col = st.columns([3, 1])
+            with head_col:
+                st.markdown(f"### [{name}]({store_url(key, st.session_state.query)})")
+            with copy_col:
+                st.markdown('<div class="ggsel-copy">', unsafe_allow_html=True)
+                st.code(store_url(key, st.session_state.query), language=None)
+                st.markdown("</div>", unsafe_allow_html=True)
+        else:
+            st.markdown(f"### [{name}]({store_url(key, st.session_state.query)})")
 
 by_sales = st.session_state.get("ggsel_by_sales", False)
 
