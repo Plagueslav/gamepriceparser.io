@@ -8,20 +8,18 @@ import price_compare as pc
 st.set_page_config(page_title="Сравнение цен на игры", layout="wide")
 
 # скрываем значки ссылок у заголовков Streamlit (#steam и т.п.)
-# и скрываем текст блоков кода в ggsel, оставляя только кнопку копирования
+# и текст адресов ggsel, оставляя только кнопку копирования
 st.markdown(
     """
     <style>
     [data-testid="stHeaderActionElements"] { display: none; }
-    .ggsel-copy pre {
-        height: 0 !important;
+    [class*="st-key-ggsel_"] pre { display: none !important; }
+    [class*="st-key-ggsel_"] [data-testid="stCodeBlock"] {
+        background: transparent !important;
+        border: none !important;
         min-height: 0 !important;
         padding: 0 !important;
-        margin: 0 !important;
-        border: none !important;
-        overflow: hidden !important;
     }
-    .ggsel-copy { margin-top: -6px; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -122,15 +120,14 @@ def head_markdown(r):
     return "  \n".join(lines)
 
 
-def render_item(r):
+def render_item(r, idx=0):
     url = r.get("url", "")
     title = md_escape(r["title"])
     if r["site"] == "ggsel" and url.startswith("http"):
-        # ggsel: название без ссылки; адрес товара только для копирования
+        # ggsel: название без ссылки; адрес товара только для кнопки копирования
         st.markdown(f"{head_markdown(r)}  \n{title}  \n{stock_text(r)}")
-        st.markdown('<div class="ggsel-copy">', unsafe_allow_html=True)
-        st.code(url, language=None)
-        st.markdown("</div>", unsafe_allow_html=True)
+        with st.container(key=f"ggsel_item_{idx}"):
+            st.code(url, language=None)
     else:
         link = f"[{title}]({url})" if url.startswith("http") else title
         st.markdown(f"{head_markdown(r)}  \n{link}  \n{stock_text(r)}")
@@ -141,8 +138,8 @@ def render_items(rows, key, by_sales):
     if not rows:
         st.caption("ничего не найдено")
         return
-    for r in sort_rows(key, rows, by_sales):
-        render_item(r)
+    for idx, r in enumerate(sort_rows(key, rows, by_sales)):
+        render_item(r, idx)
 
 
 @st.fragment
@@ -176,9 +173,8 @@ for i, (key, name) in enumerate(SITES):
             with head_col:
                 st.markdown(f"### [{name}]({store_url(key, st.session_state.query)})")
             with copy_col:
-                st.markdown('<div class="ggsel-copy">', unsafe_allow_html=True)
-                st.code(store_url(key, st.session_state.query), language=None)
-                st.markdown("</div>", unsafe_allow_html=True)
+                with st.container(key="ggsel_head_copy"):
+                    st.code(store_url(key, st.session_state.query), language=None)
         else:
             st.markdown(f"### [{name}]({store_url(key, st.session_state.query)})")
 
