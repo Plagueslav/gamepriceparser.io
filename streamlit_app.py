@@ -1,25 +1,20 @@
 import concurrent.futures as cf
+import html
+import json
 from urllib.parse import quote
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 import price_compare as pc
 
 st.set_page_config(page_title="Сравнение цен на игры", layout="wide")
 
 # скрываем значки ссылок у заголовков Streamlit (#steam и т.п.)
-# и текст адресов ggsel, оставляя только кнопку копирования
 st.markdown(
     """
     <style>
     [data-testid="stHeaderActionElements"] { display: none; }
-    [class*="st-key-ggsel_"] pre { display: none !important; }
-    [class*="st-key-ggsel_"] [data-testid="stCodeBlock"] {
-        background: transparent !important;
-        border: none !important;
-        min-height: 0 !important;
-        padding: 0 !important;
-    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -58,6 +53,32 @@ def store_url(key, query):
         "gabestore": f"https://gabestore.ru/result?ProductFilter%5Bsearch%5D={q}",
         "steampay": f"https://steampay.com/search?q={q}",
     }[key]
+
+
+def copy_button(text):
+    """Кнопка «копировать ссылку». Адрес не выводится на экран, только копируется."""
+    components.html(
+        f"""
+        <button id="copy-btn" style="cursor:pointer;padding:5px 12px;border-radius:6px;
+            border:1px solid #666;background:#262730;color:#fafafa;font-size:13px;
+            font-family:sans-serif;">📋 копировать ссылку</button>
+        <script>
+        const text = {json.dumps(text)};
+        const btn = document.getElementById("copy-btn");
+        btn.addEventListener("click", function () {{
+            const ta = document.createElement("textarea");
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            let ok = false;
+            try {{ ok = document.execCommand("copy"); }} catch (e) {{}}
+            document.body.removeChild(ta);
+            btn.textContent = ok ? "✅ скопировано" : "✖ не удалось";
+        }});
+        </script>
+        """,
+        height=44,
+    )
 
 
 def search_site(key, query):
@@ -120,14 +141,13 @@ def head_markdown(r):
     return "  \n".join(lines)
 
 
-def render_item(r, idx=0):
+def render_item(r):
     url = r.get("url", "")
     title = md_escape(r["title"])
     if r["site"] == "ggsel" and url.startswith("http"):
-        # ggsel: название без ссылки; адрес товара только для кнопки копирования
+        # ggsel: название без ссылки, адрес товара только для кнопки копирования
         st.markdown(f"{head_markdown(r)}  \n{title}  \n{stock_text(r)}")
-        with st.container(key=f"ggsel_item_{idx}"):
-            st.code(url, language=None)
+        copy_button(url)
     else:
         link = f"[{title}]({url})" if url.startswith("http") else title
         st.markdown(f"{head_markdown(r)}  \n{link}  \n{stock_text(r)}")
@@ -138,8 +158,8 @@ def render_items(rows, key, by_sales):
     if not rows:
         st.caption("ничего не найдено")
         return
-    for idx, r in enumerate(sort_rows(key, rows, by_sales)):
-        render_item(r, idx)
+    for r in sort_rows(key, rows, by_sales):
+        render_item(r)
 
 
 @st.fragment
@@ -169,12 +189,11 @@ for i, (key, name) in enumerate(SITES):
     with cols[i]:
         if key == "ggsel":
             # заголовок ggsel и рядом кнопка копирования адреса поиска
-            head_col, copy_col = st.columns([3, 1])
+            head_col, copy_col = st.columns([3, 2])
             with head_col:
                 st.markdown(f"### [{name}]({store_url(key, st.session_state.query)})")
             with copy_col:
-                with st.container(key="ggsel_head_copy"):
-                    st.code(store_url(key, st.session_state.query), language=None)
+                copy_button(store_url(key, st.session_state.query))
         else:
             st.markdown(f"### [{name}]({store_url(key, st.session_state.query)})")
 
